@@ -1,58 +1,43 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
-const app = express();
-const port = 3000;
 
-// Serve static frontend files from the "public" directory
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ping Endpoint
-app.get('/papi/api/ping', (req, res) => {
-  res.json({
-    success: true,
-    timestamp: Math.floor(Date.now() / 1000)
-  });
-});
-
-// Streams Endpoint
-app.get('/papi/api/streams', (req, res) => {
-  res.json({
-    "success": true,
-    "timestamp": Math.floor(Date.now() / 1000),
-    "READ_ME": "Free public API by DAMITV.",
-    "performance": 0.12,
-    "streams": [
-      {
-        "category": "football",
-        "id": 1,
-        "streams": [
-          {
-            "id": "wc/2026-06-16/fra-sen",
-            "name": "France vs. Senegal",
-            "poster": "https://api.ppv.to/assets/thumb/...",
-            "starts_at": 1781625600,
-            "ends_at": 1781652600,
-            "category_name": "football",
-            "status": "live",
-            "league": "FIFA World Cup 2026",
-            "teams": {
-              "home": { "name": "France", "badge": "" },
-              "away": { "name": "Senegal", "badge": "" }
-            },
-            "viewers": 1250,
-            "sources": [
-              { "source": "hls", "id": "s1", "name": "Server 1", "embed": "https://damitv.st/embed/?id=wc/2026-06-16/fra-sen" },
-              { "source": "hls", "id": "s2", "name": "BBC One", "embed": "https://damitv.st/embed/?id=wc/2026-06-16/fra-sen/uk" }
-            ],
-            "iframe": "https://damitv.st/embed/?id=wc/2026-06-16/fra-sen",
-            "embed": "https://damitv.st/embed/?id=wc/2026-06-16/fra-sen"
-          }
-        ]
+app.get('/papi/api/streams', async (req, res) => {
+  try {
+    // 1. Fetch from the master API 
+    const response = await fetch('https://ondemand.st/papi/api/streams', {
+      headers: {
+        'User-Agent': 'Vercel-Stream-Proxy/1.0',
+        'Accept': 'application/json'
       }
-    ]
-  });
+    });
+    
+    if (!response.ok) throw new Error('API fetch failed');
+    let data = await response.json();
+    
+    // 2. FILTERING: Do not send all content to the frontend.
+    // We map through the categories and strictly keep "live" streams.
+    if (data.success && data.streams) {
+      data.streams = data.streams.map(category => {
+        category.streams = category.streams.filter(stream => stream.status === 'live');
+        return category;
+      }).filter(category => category.streams.length > 0); // Remove empty categories
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Fetch error:", error);
+    res.status(500).json({ success: false, error: 'Failed to fetch active streams' });
+  }
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
