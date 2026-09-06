@@ -3,16 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DAMITV Streaming</title>
+    <title>DAMITV Live Streams</title>
     <style>
         body { font-family: -apple-system, sans-serif; background-color: #0b0f19; color: #e2e8f0; padding: 20px; }
         .stream-card { background-color: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
         .badge { padding: 4px 8px; border-radius: 4px; background-color: #dc2626; color: white; font-size: 12px; font-weight: bold; margin-left: 10px; }
-        iframe { width: 100%; height: 500px; border: none; border-radius: 8px; background-color: #000; }
+        
+        /* New Button Styles */
+        .watch-btn { display: block; width: 100%; padding: 12px; margin-top: 15px; background-color: #2563eb; color: white; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; }
+        .watch-btn:hover { background-color: #1d4ed8; }
+        
+        /* Hidden Player Container */
+        .player-container { margin-top: 15px; display: none; }
+        iframe { width: 100%; height: 250px; border: none; border-radius: 8px; background-color: #000; }
+        @media (min-width: 768px) { iframe { height: 500px; } }
     </style>
 </head>
 <body>
-    <h1>Live Streams</h1>
+    <h1>Live Matches</h1>
     <div id="streams-container">Loading streams...</div>
 
     <script>
@@ -27,23 +35,47 @@
                     
                     data.streams.forEach(category => {
                         category.streams.forEach(stream => {
+                            // Creates a safe HTML ID string (e.g., replaces slashes with dashes)
+                            const safeId = stream.id.replace(/[^a-zA-Z0-9]/g, '-');
+                            
                             container.innerHTML += `
                                 <div class="stream-card">
                                     <h2>${stream.name} <span class="badge">${stream.status.toUpperCase()}</span></h2>
                                     <p>League: ${stream.league} | Viewers: ${stream.viewers}</p>
-                                    <iframe src="${stream.iframe}" allowfullscreen></iframe>
+                                    
+                                    <!-- 1. Click to Play Button -->
+                                    <button class="watch-btn" onclick="togglePlayer('${safeId}', '${stream.iframe}')">
+                                        ▶ Watch Stream
+                                    </button>
+                                    
+                                    <!-- 2. Empty container, iframe injects here ONLY when clicked -->
+                                    <div id="player-${safeId}" class="player-container"></div>
                                 </div>
                             `;
                         });
                     });
                 }
             } catch (error) {
-                document.getElementById('streams-container').innerText = 'Error loading API.';
+                document.getElementById('streams-container').innerText = 'Error loading API data.';
+            }
+        }
+
+        // Logic to prevent loading all iframes at once
+        window.togglePlayer = function(id, iframeUrl) {
+            const container = document.getElementById(`player-${id}`);
+            
+            if (container.style.display === 'block') {
+                // Close player and destroy iframe to save memory
+                container.style.display = 'none';
+                container.innerHTML = '';
+            } else {
+                // Open player and inject iframe
+                container.style.display = 'block';
+                container.innerHTML = `<iframe src="${iframeUrl}" allowfullscreen></iframe>`;
             }
         }
 
         loadStreams();
-        setInterval(loadStreams, 60000); 
     </script>
 </body>
 </html>
