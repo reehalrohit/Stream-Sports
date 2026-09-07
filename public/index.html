@@ -2,44 +2,259 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Live sports matches and authorized streams.">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <meta
+    name="description"
+    content="Live sports matches and authorized streams."
+  >
   <title>Live Matches</title>
+
   <style>
-    :root { color-scheme: dark; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0b0f19; color: #e2e8f0; margin: 0; padding: 20px; }
-    main { max-width: 1000px; margin: 0 auto; }
-    h1 { margin: 0 0 20px; }
-    .status { margin-bottom: 20px; color: #94a3b8; }
-    .stream-card { background: #111827; border: 1px solid #1e293b; border-radius: 10px; padding: 18px; margin-bottom: 18px; }
-    .stream-card h2 { font-size: 1.15rem; margin: 0 0 8px; }
-    .meta { color: #94a3b8; margin: 0; }
-    .badge { display: inline-block; padding: 3px 7px; border-radius: 4px; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; margin-left: 8px; vertical-align: middle; }
-    .watch-btn { display: block; width: 100%; padding: 12px; margin-top: 14px; background: #2563eb; color: #fff; font-weight: 700; border: 0; border-radius: 7px; cursor: pointer; }
-    .watch-btn:hover { background: #1d4ed8; }
-    .watch-btn:disabled { opacity: .6; cursor: not-allowed; }
-    .player-container { margin-top: 14px; }
-    iframe { display: block; width: 100%; height: 250px; border: 0; border-radius: 8px; background: #000; }
-    .empty { padding: 24px; text-align: center; border: 1px dashed #334155; border-radius: 10px; color: #94a3b8; }
-    .error { color: #fca5a5; }
-    @media (min-width: 768px) { iframe { height: 500px; } }
+    :root {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background: #0b0f19;
+      color: #e2e8f0;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+    }
+
+    .status {
+      margin-bottom: 20px;
+      color: #94a3b8;
+      min-height: 24px;
+    }
+
+    .error {
+      color: #fca5a5;
+    }
+
+    .stream-card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .stream-title {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      line-height: 1.4;
+    }
+
+    .meta {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+
+    .watch-btn,
+    .close-btn,
+    .refresh-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 7px;
+      padding: 12px;
+      margin-top: 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .watch-btn {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .watch-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .watch-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .close-btn {
+      background: #334155;
+      color: #fff;
+    }
+
+    .close-btn:hover {
+      background: #475569;
+    }
+
+    .refresh-btn {
+      max-width: 220px;
+      background: #334155;
+      color: #fff;
+      margin-top: 0;
+    }
+
+    .refresh-btn:hover {
+      background: #475569;
+    }
+
+    .player-container {
+      margin-top: 14px;
+    }
+
+    .player-wrapper {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+    }
+
+    .empty {
+      padding: 28px 20px;
+      text-align: center;
+      border: 1px dashed #334155;
+      border-radius: 10px;
+      color: #94a3b8;
+    }
+
+    .stream-error {
+      margin-top: 12px;
+      color: #fca5a5;
+      font-size: 0.9rem;
+    }
+
+    @media (min-width: 768px) {
+      body {
+        padding: 32px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+    }
   </style>
 </head>
+
 <body>
   <main>
     <h1>Live Matches</h1>
-    <div id="status" class="status" role="status" aria-live="polite">Loading streams…</div>
-    <section id="streams-container" aria-label="Live matches"></section>
+
+    <div
+      id="status"
+      class="status"
+      role="status"
+      aria-live="polite"
+    >
+      Loading streams…
+    </div>
+
+    <button
+      id="refresh-btn"
+      class="refresh-btn"
+      type="button"
+    >
+      ↻ Refresh
+    </button>
+
+    <section
+      id="streams-container"
+      aria-label="Live matches"
+    ></section>
   </main>
 
   <script>
-    const container = document.getElementById('streams-container');
+    const container = document.getElementById(
+      'streams-container'
+    );
+
     const status = document.getElementById('status');
+
+    const refreshButton = document.getElementById(
+      'refresh-btn'
+    );
+
     let activePlayer = null;
+    let loading = false;
 
     function setStatus(message, isError = false) {
       status.textContent = message;
       status.classList.toggle('error', isError);
+    }
+
+    function flattenStreams(categories) {
+      if (!Array.isArray(categories)) {
+        return [];
+      }
+
+      return categories.flatMap((category) => {
+        if (!category || !Array.isArray(category.streams)) {
+          return [];
+        }
+
+        return category.streams;
+      });
+    }
+
+    function closePlayer() {
+      if (!activePlayer) {
+        return;
+      }
+
+      activePlayer.container.hidden = true;
+      activePlayer.container.replaceChildren();
+      activePlayer.button.textContent = '▶ Watch Stream';
+      activePlayer.button.setAttribute(
+        'aria-expanded',
+        'false'
+      );
+
+      activePlayer = null;
     }
 
     function createStreamCard(stream) {
@@ -47,93 +262,265 @@
       card.className = 'stream-card';
 
       const title = document.createElement('h2');
-      title.textContent = stream.name;
+      title.className = 'stream-title';
+      title.textContent =
+        stream.name || 'Live Match';
 
       const badge = document.createElement('span');
       badge.className = 'badge';
       badge.textContent = 'LIVE';
+
       title.appendChild(badge);
 
       const meta = document.createElement('p');
       meta.className = 'meta';
-      meta.textContent = `League: ${stream.league} · Viewers: ${stream.viewers}`;
+
+      const league =
+        stream.league || 'Sports';
+
+      const viewers = Number.isFinite(
+        Number(stream.viewers)
+      )
+        ? Number(stream.viewers)
+        : 0;
+
+      meta.textContent =
+        `League: ${league} · Viewers: ${viewers}`;
 
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'watch-btn';
       button.textContent = '▶ Watch Stream';
-      button.setAttribute('aria-expanded', 'false');
+      button.setAttribute(
+        'aria-expanded',
+        'false'
+      );
 
-      const player = document.createElement('div');
-      player.className = 'player-container';
-      player.hidden = true;
+      const playerContainer =
+        document.createElement('div');
+
+      playerContainer.className = 'player-container';
+      playerContainer.hidden = true;
 
       button.addEventListener('click', () => {
-        if (player.hidden) {
-          if (activePlayer && activePlayer !== player) {
-            activePlayer.hidden = true;
-            activePlayer.replaceChildren();
-          }
-
-          const url = new URL(stream.iframe);
-          if (url.protocol !== 'https:') return;
-
-          const iframe = document.createElement('iframe');
-          iframe.src = url.href;
-          iframe.title = `${stream.name} live stream`;
-          iframe.allow = 'autoplay; fullscreen; picture-in-picture';
-          iframe.allowFullscreen = true;
-          iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-          iframe.loading = 'lazy';
-
-          player.replaceChildren(iframe);
-          player.hidden = false;
-          button.setAttribute('aria-expanded', 'true');
-          activePlayer = player;
-        } else {
-          player.hidden = true;
-          player.replaceChildren();
-          button.setAttribute('aria-expanded', 'false');
-          if (activePlayer === player) activePlayer = null;
-        }
-      });
-
-      card.append(title, meta, button, player);
-      return card;
-    }
-
-    async function loadStreams() {
-      try {
-        const response = await fetch('/papi/api/streams', {
-          headers: { 'Accept': 'application/json' },
-          cache: 'no-store'
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const data = await response.json();
-        container.replaceChildren();
-
-        const streams = (data.streams || []).flatMap(category => category.streams || []);
-        if (!data.success || streams.length === 0) {
-          const empty = document.createElement('div');
-          empty.className = 'empty';
-          empty.textContent = 'No live matches are available right now.';
-          container.appendChild(empty);
-          setStatus('No live matches.');
+        if (!stream.iframe) {
+          const error = document.createElement('div');
+          error.className = 'stream-error';
+          error.textContent =
+            'This stream is currently unavailable.';
+          playerContainer.replaceChildren(error);
+          playerContainer.hidden = false;
           return;
         }
 
-        streams.forEach(stream => container.appendChild(createStreamCard(stream)));
-        setStatus(`Updated ${new Date().toLocaleTimeString()}`);
+        if (
+          activePlayer &&
+          activePlayer.container === playerContainer
+        ) {
+          closePlayer();
+          return;
+        }
+
+        closePlayer();
+
+        let url;
+
+        try {
+          url = new URL(stream.iframe);
+        } catch {
+          const error = document.createElement('div');
+          error.className = 'stream-error';
+          error.textContent =
+            'Invalid stream URL.';
+          playerContainer.replaceChildren(error);
+          playerContainer.hidden = false;
+          return;
+        }
+
+        if (url.protocol !== 'https:') {
+          const error = document.createElement('div');
+          error.className = 'stream-error';
+          error.textContent =
+            'This stream uses an unsupported URL.';
+          playerContainer.replaceChildren(error);
+          playerContainer.hidden = false;
+          return;
+        }
+
+        const wrapper =
+          document.createElement('div');
+
+        wrapper.className = 'player-wrapper';
+
+        const iframe =
+          document.createElement('iframe');
+
+        iframe.src = url.href;
+        iframe.title =
+          `${stream.name || 'Live match'} live stream`;
+
+        iframe.allow =
+          'autoplay; fullscreen; picture-in-picture';
+
+        iframe.allowFullscreen = true;
+        iframe.loading = 'lazy';
+        iframe.referrerPolicy =
+          'strict-origin-when-cross-origin';
+
+        iframe.addEventListener('error', () => {
+          const error = document.createElement('div');
+          error.className = 'stream-error';
+          error.textContent =
+            'The stream player could not be loaded.';
+          playerContainer.replaceChildren(error);
+        });
+
+        wrapper.appendChild(iframe);
+        playerContainer.replaceChildren(wrapper);
+        playerContainer.hidden = false;
+
+        button.textContent = '✕ Close Stream';
+        button.setAttribute(
+          'aria-expanded',
+          'true'
+        );
+
+        activePlayer = {
+          container: playerContainer,
+          button
+        };
+      });
+
+      card.append(
+        title,
+        meta,
+        button,
+        playerContainer
+      );
+
+      return card;
+    }
+
+    function renderStreams(streams) {
+      closePlayer();
+      container.replaceChildren();
+
+      if (!streams.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent =
+          'No live matches are available right now.';
+        container.appendChild(empty);
+        return;
+      }
+
+      const fragment =
+        document.createDocumentFragment();
+
+      streams.forEach((stream) => {
+        fragment.appendChild(
+          createStreamCard(stream)
+        );
+      });
+
+      container.appendChild(fragment);
+    }
+
+    async function loadStreams() {
+      if (loading) {
+        return;
+      }
+
+      loading = true;
+      refreshButton.disabled = true;
+
+      setStatus('Loading live matches…');
+
+      try {
+        const response = await fetch(
+          '/papi/api/streams',
+          {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json'
+            },
+            cache: 'no-store'
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP ${response.status}`
+          );
+        }
+
+        const data = await response.json();
+
+        const streams =
+          flattenStreams(data.streams);
+
+        renderStreams(streams);
+
+        if (!data.success) {
+          setStatus(
+            data.error ||
+              'Unable to load live matches.',
+            true
+          );
+        } else if (data.stale) {
+          setStatus(
+            `Showing cached results · ${
+              new Date().toLocaleTimeString()
+            }`
+          );
+        } else if (streams.length) {
+          setStatus(
+            `${streams.length} live match${
+              streams.length === 1 ? '' : 'es'
+            } · Updated ${
+              new Date().toLocaleTimeString()
+            }`
+          );
+        } else {
+          setStatus(
+            'No live matches right now.'
+          );
+        }
       } catch (error) {
-        console.error(error);
-        setStatus('Unable to load live matches. Please try again.', true);
+        console.error(
+          'Failed to load streams:',
+          error
+        );
+
+        setStatus(
+          'Unable to load live matches. Please try again.',
+          true
+        );
+
+        if (!container.children.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent =
+            'The live stream service is currently unavailable.';
+          container.appendChild(empty);
+        }
+      } finally {
+        loading = false;
+        refreshButton.disabled = false;
       }
     }
 
+    refreshButton.addEventListener(
+      'click',
+      loadStreams
+    );
+
     loadStreams();
-    setInterval(loadStreams, 30000);
+
+    setInterval(
+      loadStreams,
+      30000
+    );
   </script>
 </body>
-</html>
+  </html>
